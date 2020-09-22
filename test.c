@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
+#include <time.h>
 
 // Enable ECB, CTR and CBC mode. Note this can be done before including aes.h or at compile-time.
 // E.g. with GCC by using the -D flag: gcc -c aes.c -DCBC=0 -DCTR=1 -DECB=1
@@ -36,10 +37,11 @@ int main(void)
     return 0;
 #endif
 
-    exit = test_encrypt_cbc() + test_decrypt_cbc() +
+    exit = test_encrypt_ecb();
+    /*exit = test_encrypt_cbc() + test_decrypt_cbc() +
 	test_encrypt_ctr() + test_decrypt_ctr() +
 	test_decrypt_ecb() + test_encrypt_ecb();
-    test_encrypt_ecb_verbose();
+    test_encrypt_ecb_verbose();*/
 
     return exit;
 }
@@ -121,19 +123,39 @@ static int test_encrypt_ecb(void)
 #endif
 
     uint8_t in[]  = { 0x6b, 0xc1, 0xbe, 0xe2, 0x2e, 0x40, 0x9f, 0x96, 0xe9, 0x3d, 0x7e, 0x11, 0x73, 0x93, 0x17, 0x2a };
+    uint8_t in_copy[]  = { 0x6b, 0xc1, 0xbe, 0xe2, 0x2e, 0x40, 0x9f, 0x96, 0xe9, 0x3d, 0x7e, 0x11, 0x73, 0x93, 0x17, 0x2a };
     struct AES_ctx ctx;
 
     AES_init_ctx(&ctx, key);
-    AES_ECB_encrypt(&ctx, in);
+    unsigned int i;
+    unsigned int success = 0;
+    unsigned int failure = 0;
+    unsigned long num_encryptions = 0;
 
-    printf("ECB encrypt: ");
+    time_t start, end;
+    start = time(NULL);
 
-    if (0 == memcmp((char*) out, (char*) in, 16)) {
-        printf("SUCCESS!\n");
-	return(0);
-    } else {
-        printf("FAILURE!\n");
-	return(1);
+    do {
+        AES_ECB_encrypt(&ctx, in);
+        time(&end);
+        num_encryptions++;
+
+        if (0 == memcmp((char*) out, (char*) in, 16)) {
+            success++;
+        } else {
+            failure++;
+        }
+        for(i=15; i<16; i--) in[i]=in_copy[i];
+    } while(end - start < 30);
+    if(success > 0 && failure == 0) {
+        printf("Success!\n");
+        printf("Bytes processed: %lu\n", (num_encryptions*16));
+        printf("Time total: %ld\n", (end-start));
+        return 0;
+    }
+    else {
+        printf("Failure!\n");
+        return 1;
     }
 }
 
