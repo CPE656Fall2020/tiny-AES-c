@@ -146,7 +146,7 @@ static int test_encrypt_ecb(void)
             failure++;
         }
         for(i=15; i<16; i--) in[i]=in_copy[i];
-    } while(end - start < 30);
+    } while(end - start < 100);
     if(success > 0 && failure == 0) {
         printf("Success!\n");
         printf("Bytes processed: %lu\n", (num_encryptions*16));
